@@ -2,12 +2,21 @@
 
 <!-- TOC depthFrom:2 -->
 
+- [Preparation](#preparation)
 - [Cluster Controller](#cluster-controller)
 - [Topic Controller](#topic-controller)
     - [Conflict solving and merging](#conflict-solving-and-merging)
 - [Topic Webhook](#topic-webhook)
 
 <!-- /TOC -->
+
+## Preparation
+
+* Start OpenShift and login as admin
+```
+oc cluster up
+oc login -u system:admin
+```
 
 ## Cluster Controller
 
@@ -17,9 +26,9 @@ oc apply -f cluster-controller/openshift-template.yaml
 ```
 
 * Create Kafka / Zookeeper cluster
-  * In openShift console
+  * In OpenShift console
 * Create Kafka Config
-  * In openShift console
+  * In OpenShift console
 
 ## Topic Controller
 
@@ -40,7 +49,7 @@ oc apply -f topic-controller/topic.yaml
 
 * Show how they are reconciled
 ```
-bin/kafka-topics.sh --zookeeper kafka-zookeeper:2181 --describe --topic created-as-configmap
+oc exec kafka-1 -i -t -- bin/kafka-topics.sh --zookeeper kafka-zookeeper:2181 --describe --topic created-as-configmap
 oc get configmap created-in-kafka -o yaml
 ```
 
@@ -55,7 +64,7 @@ oc delete -f topic-controller/openshift-template.yaml
 oc apply -f topic-controller/conflict/topic.yaml
 oc exec kafka-1 -i -t -- bin/kafka-topics.sh --zookeeper kafka-zookeeper:2181 --create --topic example-conflict-topic --partitions 3 --replication-factor 1 --config cleanup.policy=compact
 ```
-
+oc apply -f topic-webhook/example-rejected-consumer.yaml
 * Recreate controller and let it deal with it
 ```
 oc apply -f topic-controller/openshift-template.yaml
@@ -63,7 +72,7 @@ oc apply -f topic-controller/openshift-template.yaml
 
 * Show how conflict resolved (Kafka wins)
 ```
-bin/kafka-topics.sh --zookeeper kafka-zookeeper:2181 --describe --topic example-conflict-topic
+oc exec kafka-1 -i -t -- bin/kafka-topics.sh --zookeeper kafka-zookeeper:2181 --describe --topic example-conflict-topic
 oc get configmap example-conflict-topic -o yaml
 ```
 
@@ -84,7 +93,7 @@ oc apply -f topic-controller/openshift-template.yaml
 
 * Show how the changes merged and explain how the third source of truth was used
 ```
-bin/kafka-topics.sh --zookeeper kafka-zookeeper:2181 --describe --topic example-conflict-topic
+oc exec kafka-1 -i -t -- bin/kafka-topics.sh --zookeeper kafka-zookeeper:2181 --describe --topic example-conflict-topic
 oc get configmap example-conflict-topic -o yaml
 ```
 
@@ -99,7 +108,7 @@ oc apply -f topic-webhook/openshift.yaml
 ```
 oc apply -f topic-webhook/example-consumer.yaml
 oc apply -f topic-webhook/example-producer.yaml
-bin/kafka-topics.sh --zookeeper kafka-zookeeper:2181 --describe --topic my-webhooked-topic
+oc exec kafka-1 -i -t -- bin/kafka-topics.sh --zookeeper kafka-zookeeper:2181 --describe --topic my-webhooked-topic
 ```
 
 * Show how it collaborates with the topic controller
