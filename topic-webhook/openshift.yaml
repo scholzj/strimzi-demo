@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: strimzi-topic-webhook
+  name: strimzi-topic-webhook
+  namespace: myproject
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
+  selector:
+    name: strimzi-topic-webhook
+  type: ClusterIP
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: strimzi-topic-webhook
+  labels:
+    name: strimzi-topic-webhook
+  namespace: myproject
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: strimzi-topic-webhook
+      labels:
+        name: strimzi-topic-webhook
+    spec:
+      containers:
+        - image: scholzj/kafka-topic-webhook:latest
+          name: strimzi-topic-webhook
+          env:
+            - name: ZOOKEEPER_URL
+              value: kafka-zookeeper:2181
+          ports:
+            - containerPort: 8443
+              name: https
+---
+
+apiVersion: admissionregistration.k8s.io/v1alpha1
+kind: ExternalAdmissionHookConfiguration
+metadata:
+  name: strimzi-topic-webhook
+externalAdmissionHooks:
+- name: topic-webhook.kafka.strimzi.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - pods
+  failurePolicy: Ignore
+  clientConfig:
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURPakNDQWlLZ0F3SUJBZ0lVSnNOeklveUNESEpYcmhDakJvM1M2elZTNnNvd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0l6RWhNQjhHQTFVRUNoTVlVM1J5YVcxNmFTQlViM0JwWXlCWFpXSm9iMjlySUVOQk1CNFhEVEU0TURFdwpOekl4TVRBd01Gb1hEVEl6TURFd05qSXhNVEF3TUZvd0l6RWhNQjhHQTFVRUNoTVlVM1J5YVcxNmFTQlViM0JwCll5QlhaV0pvYjI5cklFTkJNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQXRqVXkKTjgxVDMyWnJiRHNMd0lJVkJJUDRkWERRTjlRUlh0NGc4djBCTi9aTEJRM0kzYWFLa0QzSlFXSmlkVHg1aW8wSQpuTnlUSXYrTURJMXlQZHhBT2FLMUtrYndFVFg2OGxQYXJPa1dHSHVxbDg5ZTByQWxtYkc0M3Jlc1ZFaHA2UTI0CjBnd3hoTHNoQnVaQzJpUGlaY2R3VXFZV0JNTEZWTWhESi81U1JYMUJnZEd5VGd3aWZvVlpHbllKdU9DdzlXTmEKNDBCTEc4amRhdkVLNXMzTFp4NXljMU92TktyWnFnQVAzYk5XbWFtNU94VVFyU3dvdFlZbkZ6N2JEVEpPSVdvSQpDSEg2LzBnQjZoNmhHbnNqc2tNV0QyRG9zL0xUWUJUZ3RTYUJ0Vk9Vb3ZnUnYyWlNBb0YyK3htMVZtMXZaMGhZCkVaRERXUm5KOUV5YmpKYTJ5d0lEQVFBQm8yWXdaREFPQmdOVkhROEJBZjhFQkFNQ0FRWXdFZ1lEVlIwVEFRSC8KQkFnd0JnRUIvd0lCQWpBZEJnTlZIUTRFRmdRVVhXR0ErNXgrZEM4aXU1VWpseDI1NWw4Sjh1QXdId1lEVlIwagpCQmd3Rm9BVVhXR0ErNXgrZEM4aXU1VWpseDI1NWw4Sjh1QXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBS2hYCjdjK2dPKy8rRERBdXpGNUhHc3NFZEsvL2xmZWVFNzBBd3lEZXR1SzU5cmo1RUhyMWd6L1Z1WVE2Skc3TkxKN3AKQ0tiK01BRnhNdVZNNnB4NkYycU9taEdEM3YrVmhtcysxRjRLWjhWTnNDck5TNDJqc0x6aVBRKzc0WHhjalVRagpiUTFPVHN6WE1IWUFhbmVKYmM4NXdPSTVDU3Q1cVhPOSt2c0wyUWJHekNKT05DdEpYTUhLZ2NsSVZmSUszV2JUCmRXOXgvRnNFNE9FWGp3V1hOZDFPWTF1UzQ2MXpDTHZWY2U5WUhJaXNOUldqMEYrODZOR3JubS9yTXhmM1VVc2kKZyttQ0t2bDNCNVdmSXVyck1vM2IrV2ZxcXZTNWk2UWhUeXhvWGFQN2w3cnNtNGxMWm0vWURhV0JQMkk3N0svQQp6OEtnZ0RJU1VCb0x5N1pyNUlvPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    service:
+      name: strimzi-topic-webhook
+      namespace: myproject
