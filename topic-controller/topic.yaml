@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: example-topic-cm
+  name: created-as-configmap
   labels:
     app: strimzi
     kind: topic
 data:
-  name: example-topic-cm
+  name: created-as-configmap
   partitions: "1"
   replicas: "1"
   config: '{ "cleanup.policy":"compact", "retention.ms":"4600000" }'
